@@ -1,9 +1,24 @@
 import time
 import random
-import threading  # For timer functionality
+import threading  # For Air Filter Condition special generation
+import os
+import atexit
+from confluent_kafka import Producer
 
-# Log file name
-log_file = "vehicle_metrics.log"
+# Fetch Kafka broker address from environment variable
+kafka_broker = os.getenv('KAFKA_BOOTSTRAP_SERVERS')
+
+if kafka_broker is None:
+    raise ValueError("KAFKA_BROKER_ADDRESS environment variable is not set")
+
+# Kafka producer configuration
+kafka_config = {
+    'bootstrap.servers': kafka_broker,
+    # Maybe other configurations needed.. ?
+}
+
+producer = Producer(kafka_config)
+
 
 # Metrics and their descriptions
 metrics = {
@@ -36,35 +51,27 @@ def generate_mock_message():
     
     # Join all parts into a single message
     message = f"[{vehicle_id}] [{timestamp}] - " + " ".join(message_parts)
-    print(message)
-    # Append message to log file
-    with open(log_file, 'a') as f:
-        f.write(message + "\n")
+    
+    # Produce the message to Kafka
+    producer.produce("telemetry", message.encode('utf-8'))
+
+    # Flush the producer to ensure the message is sent immediately
+    producer.flush()
 
 
-# Timer function to update Air Filter Condition every 5 seconds
+
+# Timer function to update Air Filter Condition every 5 hours
 def update_air_filter_condition():
     while True:
         metrics["Air Filter Condition"] = random.choice(["Clean", "Moderate", "Dirty"])
         # Sleep for 5 hours
         time.sleep(18000)
 
-# Main loop to generate messages every N seconds
-def main(interval_seconds):
-    # Start a thread to update Air Filter Condition periodically
-    air_filter_thread = threading.Thread(target=update_air_filter_condition)
-    air_filter_thread.daemon = True  # Daemonize the thread so it terminates when main program exits
-    air_filter_thread.start()
+def shutdown_hook():
+    producer.flush(timeout=5)  # Wait for up to 5 seconds for the messages to be delivered
+    producer.close()
 
-    # Main loop to generate messages
-    while True:
-        generate_mock_message()
-        time.sleep(interval_seconds)
-
-if __name__ == "__main__":
-    interval_seconds = 1  # Change this value to set the interval in seconds
-    main(interval_seconds)
-
+atexit.register(shutdown_hook)
 
 # Main loop to generate messages every N seconds
 def main(interval_seconds):
@@ -79,10 +86,10 @@ def main(interval_seconds):
         time.sleep(interval_seconds)
 
 if __name__ == "__main__":
-    interval_seconds = 1  # Change this value to set the interval in seconds
+    interval_seconds = 0.05 # Change this value to set the interval in seconds
+    time.sleep(20)
+    producer = Producer(kafka_config)
     main(interval_seconds)
-
-
 
 
 
