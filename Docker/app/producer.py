@@ -2,6 +2,9 @@ import time
 import random
 import threading  # For timer functionality
 
+# Log file name
+log_file = "vehicle_metrics.log"
+
 # Metrics and their descriptions
 metrics = {
     "Engine Speed (RPM)": None,
@@ -34,6 +37,10 @@ def generate_mock_message():
     # Join all parts into a single message
     message = f"[{vehicle_id}] [{timestamp}] - " + " ".join(message_parts)
     print(message)
+    # Append message to log file
+    with open(log_file, 'a') as f:
+        f.write(message + "\n")
+
 
 # Timer function to update Air Filter Condition every 5 seconds
 def update_air_filter_condition():
