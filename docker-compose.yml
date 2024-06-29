@@ -168,12 +168,21 @@ services:
       KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
 
   producer:
-    build: ./Docker
+    build: ./Docker/producerApp/
     depends_on:
         - broker
     environment:
         KAFKA_BOOTSTRAP_SERVERS: broker:29092
     volumes:
-        - ./Docker/app:/app  # Mount your Python script or volume containing your script
-    command: python /app/producer.py  # Replace with your actual command to run the producer
+        - ./Docker/producerApp/:/app  # Python script - generates random datas and produce it to the telemetry topic
+    command: python /app/producer.py
 
+  consumer:
+     build: ./Docker/consumerApp/
+     depends_on:
+         - broker
+     environment:
+         KAFKA_BOOTSTRAP_SERVERS: broker:29092
+     volumes:
+         - ./Docker/consumerApp/:/app  # Python script - consume the telemetry topic
+     command: python /app/consumer.py
