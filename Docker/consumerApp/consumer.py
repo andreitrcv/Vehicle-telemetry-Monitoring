@@ -55,6 +55,6 @@ def kafka_consumer():
         consumer.close()
 
 if __name__ == '__main__':
-    time.sleep(120)
+    time.sleep(30)
     kafka_consumer()
 
