@@ -8,13 +8,16 @@ from confluent_kafka import Producer
 # Fetch Kafka broker address from environment variable
 kafka_broker = os.getenv('KAFKA_BOOTSTRAP_SERVERS')
 
+# Fetch HOSTNAME from environment variable to use it as message key
+busID = os.getenv('HOSTNAME')
+
 if kafka_broker is None:
     raise ValueError("KAFKA_BROKER_ADDRESS environment variable is not set")
 
 # Kafka producer configuration
 kafka_config = {
     'bootstrap.servers': kafka_broker,
-    # Maybe other configurations needed.. ?
+    # Other configurations if needed..
 }
 
 producer = Producer(kafka_config)
@@ -33,7 +36,7 @@ metrics = {
 
 # Function to generate and print messages with faker data
 def generate_mock_message():
-    vehicle_id = "VehicleID"
+    vehicle_id = busID
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     
     # Generate random values for metrics
@@ -52,8 +55,8 @@ def generate_mock_message():
     # Join all parts into a single message
     message = f"[{vehicle_id}] [{timestamp}] - " + " ".join(message_parts)
     
-    # Produce the message to Kafka
-    producer.produce("telemetry", message.encode('utf-8'))
+    # Produce the message to Kafka with specified partition
+    producer.produce("telemetry", key=vehicle_id, value=message.encode('utf-8'))
 
     # Flush the producer to ensure the message is sent immediately
     producer.flush()
@@ -87,6 +90,6 @@ def main(interval_seconds):
 
 if __name__ == "__main__":
     interval_seconds = 0.05 # Change this value to set the interval in seconds
-    time.sleep(20)
+    time.sleep(60)
     producer = Producer(kafka_config)
     main(interval_seconds)

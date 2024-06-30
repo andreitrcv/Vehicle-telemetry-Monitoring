@@ -176,9 +176,8 @@ services:
     volumes:
         - ./Docker/producerApp/:/app  # Python script - generates random datas and produce it to the telemetry topic
     command: python /app/producer.py
-    hostname: producer
-    container_name: producer
-
+    deploy:
+        replicas: 10
   consumer:
      build: ./Docker/consumerApp/
      depends_on:
@@ -202,7 +201,7 @@ services:
       kafka-topics --bootstrap-server broker:29092 --list
 
       echo -e 'Creating kafka topics'
-      kafka-topics --bootstrap-server broker:29092 --create --if-not-exists --topic telemetry --replication-factor 1 --partitions 1
+      kafka-topics --bootstrap-server broker:29092 --create --if-not-exists --topic telemetry --replication-factor 1 --partitions 10
 
       echo -e 'Successfully created the following topics:'
       kafka-topics --bootstrap-server broker:29092 --list
