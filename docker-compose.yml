@@ -176,6 +176,8 @@ services:
     volumes:
         - ./Docker/producerApp/:/app  # Python script - generates random datas and produce it to the telemetry topic
     command: python /app/producer.py
+    hostname: producer
+    container_name: producer
 
   consumer:
      build: ./Docker/consumerApp/
@@ -186,3 +188,5 @@ services:
      volumes:
          - ./Docker/consumerApp/:/app  # Python script - consume the telemetry topic
      command: python /app/consumer.py
+     hostname: consumer
+     container_name: consumer
