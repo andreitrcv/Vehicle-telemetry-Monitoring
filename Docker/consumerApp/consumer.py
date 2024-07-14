@@ -38,7 +38,7 @@ def kafka_consumer():
         with open(output_file, 'a') as file:
             while True:
                 # Poll for messages
-                msg = consumer.poll(timeout=1.0)  # Timeout in seconds
+                msg = consumer.poll(timeout=0.1)  # Timeout in seconds
                 current_time = datetime.now()
                 if msg is None:
                     continue
