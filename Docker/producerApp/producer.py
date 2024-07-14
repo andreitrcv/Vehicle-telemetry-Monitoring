@@ -21,6 +21,10 @@ kafka_config = {
     # Other configurations if needed..
 }
 
+# For performance throughput
+message_count = 0
+start_time = time.time()
+
 producer = Producer(kafka_config)
 
 
@@ -37,6 +41,7 @@ metrics = {
 
 # Function to generate and print messages with faker data
 def generate_mock_message():
+    global message_count
     vehicle_id = busID
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     
@@ -58,6 +63,7 @@ def generate_mock_message():
     
     # Produce the message to Kafka with specified partition
     producer.produce("telemetry", key=vehicle_id, value=message.encode('utf-8'))
+    message_count += 1
 
     # Flush the producer to ensure the message is sent immediately
     # producer.flush()
@@ -77,6 +83,16 @@ def shutdown_hook():
 
 atexit.register(shutdown_hook)
 
+def print_throughput():
+    global message_count, start_time
+    elapsed_time = time.time() - start_time
+    if elapsed_time > 0:
+        production_rate = message_count / elapsed_time
+        print(f"Production rate: {production_rate:.2f} messages/second")
+    message_count = 0
+    start_time = time.time()
+
+
 # Main loop to generate messages every N seconds
 def main(interval_seconds):
     # Start a thread to update Air Filter Condition periodically
@@ -87,6 +103,8 @@ def main(interval_seconds):
     # Main loop to generate messages
     while True:
         generate_mock_message()
+        if message_count % 1000 == 0:
+            print_throughput()
         time.sleep(interval_seconds)
 
 if __name__ == "__main__":
