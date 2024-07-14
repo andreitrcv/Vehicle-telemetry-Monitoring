@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 import random
 import threading  # For Air Filter Condition special generation
 import os
@@ -37,7 +38,7 @@ metrics = {
 # Function to generate and print messages with faker data
 def generate_mock_message():
     vehicle_id = busID
-    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     
     # Generate random values for metrics
     metrics["Engine Speed (RPM)"] = str(random.randint(1000, 6000))
