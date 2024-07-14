@@ -59,7 +59,7 @@ def generate_mock_message():
     producer.produce("telemetry", key=vehicle_id, value=message.encode('utf-8'))
 
     # Flush the producer to ensure the message is sent immediately
-    producer.flush()
+    # producer.flush()
 
 
 
