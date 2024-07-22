@@ -5,22 +5,23 @@ import os
 import atexit
 from confluent_kafka import Producer
 
-# Fetch Kafka broker address from environment variable
-kafka_broker = os.getenv('KAFKA_BOOTSTRAP_SERVERS')
 
-# Fetch HOSTNAME from environment variable to use it as message key
-busID = os.getenv('HOSTNAME')
+# Random bus ID
+busID = random.randint(0, 1000)
 
-if kafka_broker is None:
-    raise ValueError("KAFKA_BROKER_ADDRESS environment variable is not set")
 
-# Kafka producer configuration
-kafka_config = {
-    'bootstrap.servers': kafka_broker,
-    # Other configurations if needed..
-}
+def read_config():
+  # reads the client configuration from client.properties
+  # and returns it as a key-value map
+  config = {}
+  with open("client.properties") as fh:
+    for line in fh:
+      line = line.strip()
+      if len(line) != 0 and line[0] != "#":
+        parameter, value = line.strip().split('=', 1)
+        config[parameter] = value.strip()
+  return config
 
-producer = Producer(kafka_config)
 
 
 # Metrics and their descriptions
@@ -56,7 +57,7 @@ def generate_mock_message():
     message = f"[{vehicle_id}] [{timestamp}] - " + " ".join(message_parts)
     
     # Produce the message to Kafka with specified partition
-    producer.produce("telemetry", key=vehicle_id, value=message.encode('utf-8'))
+    producer.produce("telemetry", key=str(vehicle_id), value=message.encode('utf-8'))
 
     # Flush the producer to ensure the message is sent immediately
     # producer.flush()
@@ -82,7 +83,6 @@ def main(interval_seconds):
     air_filter_thread = threading.Thread(target=update_air_filter_condition)
     air_filter_thread.daemon = True  # Daemonize the thread so it terminates when main program exits
     air_filter_thread.start()
-
     # Main loop to generate messages
     while True:
         generate_mock_message()
@@ -90,6 +90,5 @@ def main(interval_seconds):
 
 if __name__ == "__main__":
     interval_seconds = 0.05 # Change this value to set the interval in seconds
-    time.sleep(60)
-    producer = Producer(kafka_config)
+    producer = Producer(read_config())
     main(interval_seconds)
