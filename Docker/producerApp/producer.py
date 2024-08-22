@@ -1,6 +1,7 @@
 import time
 from datetime import datetime
 import random
+import json
 import threading  # For Air Filter Condition special generation
 import os
 import atexit
@@ -30,13 +31,13 @@ producer = Producer(kafka_config)
 
 # Metrics and their descriptions
 metrics = {
-    "Engine Speed (RPM)": None,
-    "Engine Temperature": None,
-    "Oil Pressure": None,
-    "Fuel Consumption": None,
-    "Exhaust Gas Temperature": None,
-    "Battery Status": None,
-    "Air Filter Condition": None
+    "Engine_Speed_RPM": None,
+    "Engine_Temperature": None,
+    "Oil_Pressure": None,
+    "Fuel_Consumption": None,
+    "Exhaust_Gas_Temperature": None,
+    "Battery_Status": None,
+    "Air_Filter_Condition": None
 }
 
 # Function to generate and print messages with faker data
@@ -46,34 +47,32 @@ def generate_mock_message():
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     
     # Generate random values for metrics
-    metrics["Engine Speed (RPM)"] = str(random.randint(1000, 6000))
-    metrics["Engine Temperature"] = f"{random.randint(50, 100)}°C"
-    metrics["Oil Pressure"] = f"{random.randint(30, 80)} psi"
-    metrics["Fuel Consumption"] = f"{round(random.uniform(8, 15), 1)} L/100km"
-    metrics["Exhaust Gas Temperature"] = f"{random.randint(300, 600)}°C"
-    metrics["Battery Status"] = f"{round(random.uniform(11.5, 13.5), 1)}V"
+    metrics["Engine_Speed_RPM"] = random.randint(1000, 6000)
+    metrics["Engine_Temperature"] = random.randint(50, 100)
+    metrics["Oil_Pressure"] = random.randint(30, 80)
+    metrics["Fuel_Consumption"] = round(random.uniform(8, 15), 1)
+    metrics["Exhaust_Gas_Temperature"] = random.randint(300, 600)
+    metrics["Battery_Status"] = round(random.uniform(11.5, 13.5), 1)
 
-    # Create message with all metrics
-    message_parts = []
-    for metric_key, metric_value in metrics.items():
-        message_parts.append(f"[{metric_key}] [{metric_value}]")
+    # Include vehicle_id and timestamp in the message
+    message = {
+        "vehicle_id": vehicle_id,
+        "timestamp": timestamp,
+        **metrics
+    }
     
-    # Join all parts into a single message
-    message = f"[{vehicle_id}] [{timestamp}] - " + " ".join(message_parts)
+    # Serialize the message to JSON
+    message_json = json.dumps(message)
     
-    # Produce the message to Kafka with specified partition
-    producer.produce("telemetry", key=vehicle_id, value=message.encode('utf-8'))
+    # Produce the message to Kafka
+    producer.produce("telemetry", key=vehicle_id, value=message_json.encode('utf-8'))
     message_count += 1
-
-    # Flush the producer to ensure the message is sent immediately
-    # producer.flush()
-
-
+    
 
 # Timer function to update Air Filter Condition every 5 hours
 def update_air_filter_condition():
     while True:
-        metrics["Air Filter Condition"] = random.choice(["Clean", "Moderate", "Dirty"])
+        metrics["Air_Filter_Condition"] = random.choice(["Clean", "Moderate", "Dirty"])
         # Sleep for 5 hours
         time.sleep(18000)
 
@@ -84,13 +83,13 @@ def shutdown_hook():
 atexit.register(shutdown_hook)
 
 def print_throughput():
-    global message_count, start_time
-    elapsed_time = time.time() - start_time
-    if elapsed_time > 0:
-        production_rate = message_count / elapsed_time
-        print(f"Production rate: {production_rate:.2f} messages/second")
-    message_count = 0
-    start_time = time.time()
+        global message_count, start_time
+        elapsed_time = time.time() - start_time
+        if elapsed_time > 0:
+            production_rate = message_count / elapsed_time
+            print(f"Production rate: {production_rate:.2f} messages/second")
+        message_count = 0
+        start_time = time.time()
 
 
 # Main loop to generate messages every N seconds
