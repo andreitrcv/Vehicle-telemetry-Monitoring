@@ -46,13 +46,23 @@ def generate_mock_message():
     vehicle_id = busID
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     
-    # Generate random values for metrics
-    metrics["Engine_Speed_RPM"] = random.randint(1000, 6000)
-    metrics["Engine_Temperature"] = random.randint(50, 100)
-    metrics["Oil_Pressure"] = random.randint(30, 80)
-    metrics["Fuel_Consumption"] = round(random.uniform(8, 15), 1)
-    metrics["Exhaust_Gas_Temperature"] = random.randint(300, 600)
-    metrics["Battery_Status"] = round(random.uniform(11.5, 13.5), 1)
+    # Generate random values for metrics with realistic behavior
+    metrics["Engine_Speed_RPM"] = max(0, min(int(random.gauss(3000, 500)), 8000))  # Normal distribution, with mean at 3000 RPM, SD=500
+    metrics["Engine_Temperature"] = max(0, min(int(random.gauss(80, 10)), 120))  # Mean around 80°C, SD=10, limit at 120°C
+    metrics["Oil_Pressure"] = max   (0, min(int(random.gauss(60, 10)), 100))  # Mean around 60 psi, SD=10, limit at 100 psi
+    metrics["Fuel_Consumption"] = round(max(0, min(random.gauss(10, 1), 20)), 1)  # Mean of 10 L/100km, SD=1, max 20 L/100km
+    metrics["Exhaust_Gas_Temperature"] = max(200, min(int(random.gauss(400, 50)), 800))  # Mean at 400°C, SD=50, limits between 200 and 800°C
+    metrics["Battery_Status"] = round(max(10, min(random.gauss(12.5, 0.5), 14)), 1)  # Mean around 12.5V, SD=0.5, limit between 10V and 14V
+
+    # Introduce rare abnormal values
+    if random.random() < 0.001:  # 0.1% chance of an outlier
+        metrics["Engine_Speed_RPM"] = random.randint(8000, 9000)  # Spike in RPM
+        metrics["Engine_Temperature"] = random.randint(120, 150)  # Overheating
+        metrics["Oil_Pressure"] = random.randint(10, 30)  # Low oil pressure
+        metrics["Fuel_Consumption"] = round(random.uniform(20, 30), 1)  # High fuel consumption
+        metrics["Exhaust_Gas_Temperature"] = random.randint(800, 1000)  # Extreme exhaust temperature
+        metrics["Battery_Status"] = round(random.uniform(9, 10), 1)  # Battery draining
+
 
     # Include vehicle_id and timestamp in the message
     message = {
@@ -72,7 +82,10 @@ def generate_mock_message():
 # Timer function to update Air Filter Condition every 5 hours
 def update_air_filter_condition():
     while True:
-        metrics["Air_Filter_Condition"] = random.choice(["Clean", "Moderate", "Dirty"])
+        metrics["Air_Filter_Condition"] = random.choices(
+            ["Clean", "Moderate", "Dirty"],
+            weights=[90, 9, 1]  # Most often Clean, rarely Dirty
+        )[0]
         # Sleep for 5 hours
         time.sleep(18000)
 
