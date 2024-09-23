@@ -1,3 +1,5 @@
-*.jsonl
 *.log
+*.key
 *.env
+*.jsonl
+*.ksqldb
